@@ -1,8 +1,0 @@
-module testapi {
-    module SwiftTestingHarness {
-        header "../SwiftTestingHarness.h"
-        export *
-    }
-
-    export *
-}
