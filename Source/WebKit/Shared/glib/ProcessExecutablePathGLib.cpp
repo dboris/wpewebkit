@@ -44,7 +44,12 @@ static String getExecutablePath()
 
 static String findWebKitProcess(const ASCIILiteral processName)
 {
-#if ENABLE(DEVELOPER_MODE)
+    // WinCatalyst (wincat branch): WEBKIT_EXEC_PATH is honoured in every build, not only
+    // under DEVELOPER_MODE. The engine ships inside a relocatable SDK prefix (a tarball
+    // unpacked anywhere), so the compiled-in PKGLIBEXECDIR below names a directory that
+    // exists only on the build host; the SDK's loader sets WEBKIT_EXEC_PATH to
+    // <prefix>/libexec/wpe-webkit-2.0 before the first web view. The build-directory
+    // fallback (getExecutablePath) stays a developer-mode convenience.
     static const char* execDirectory = g_getenv("WEBKIT_EXEC_PATH");
     if (execDirectory) {
         String processPath = FileSystem::pathByAppendingComponent(FileSystem::stringFromFileSystemRepresentation(execDirectory), processName);
@@ -52,6 +57,7 @@ static String findWebKitProcess(const ASCIILiteral processName)
             return processPath;
     }
 
+#if ENABLE(DEVELOPER_MODE)
     static String executablePath = getExecutablePath();
     if (!executablePath.isNull()) {
         String processPath = FileSystem::pathByAppendingComponent(executablePath, processName);

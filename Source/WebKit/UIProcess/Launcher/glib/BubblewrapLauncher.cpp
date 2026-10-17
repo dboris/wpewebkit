@@ -975,13 +975,18 @@ GRefPtr<GSubprocess> bubblewrapSpawn(GSubprocessLauncher* launcher, const Proces
         sandboxArgs.append("--unshare-ipc");
     }
 
-#if ENABLE(DEVELOPER_MODE)
+    // WinCatalyst (wincat branch): WEBKIT_EXEC_PATH is honoured in every build (see
+    // Shared/glib/ProcessExecutablePathGLib.cpp), so the sandbox must see what it names.
+    // The exec dir is `<prefix>/libexec/wpe-webkit-2.0` in every WPE install and the
+    // helpers resolve libWPEWebKit through an rpath of `$ORIGIN/../../lib`, i.e.
+    // `<prefix>/lib` -- so bind the PREFIX (two levels up), not just `<prefix>/libexec`.
     const char* execDirectory = g_getenv("WEBKIT_EXEC_PATH");
     if (execDirectory) {
-        auto parentDir = FileSystem::parentPath(FileSystem::stringFromFileSystemRepresentation(execDirectory));
-        bindIfExists(sandboxArgs, parentDir.utf8().data());
+        auto prefixDir = FileSystem::parentPath(FileSystem::parentPath(FileSystem::stringFromFileSystemRepresentation(execDirectory)));
+        bindIfExists(sandboxArgs, prefixDir.utf8().data());
     }
 
+#if ENABLE(DEVELOPER_MODE)
     CString executablePath = FileSystem::currentExecutablePath();
     if (!executablePath.isNull()) {
         // Our executable is `/foo/bar/bin/Process`, we want `/foo/bar` as a usable prefix
